@@ -10,7 +10,7 @@ $sql = "SELECT p.*, u.nama_lengkap, b.nama_file, b.path_file
         FROM pesanan p 
         JOIN pengguna u ON p.id_pengguna = u.id_pengguna 
         JOIN berkas b ON p.id_berkas = b.id_berkas
-        WHERE p.status_pesanan IN ('menunggu', 'diproses', 'selesai')
+        WHERE p.status_pesanan IN ('menunggu', 'diproses', 'selesai', 'tertunda')
         ORDER BY p.tanggal_pesan ASC";
 $stmt = $pdo->query($sql);
 $pesanan = $stmt->fetchAll();
@@ -80,6 +80,7 @@ $pesanan = $stmt->fetchAll();
                                 $badge = 'badge-info';
                                 if ($row['status_pesanan'] == 'diproses') $badge = 'badge-warning';
                                 if ($row['status_pesanan'] == 'selesai') $badge = 'badge-success';
+                                if ($row['status_pesanan'] == 'tertunda') $badge = 'badge-danger';
                                 ?>
                                 <span class="badge <?= $badge ?>"><?= ucfirst($row['status_pesanan']) ?></span>
                             </td>

@@ -29,6 +29,12 @@ $stmtDetail = $pdo->prepare("SELECT d.*, l.nama_layanan, t.ukuran_kertas, t.jeni
                              WHERE d.id_pesanan = :id");
 $stmtDetail->execute([':id' => $id]);
 $details = $stmtDetail->fetchAll();
+
+// Validasi BR-13: Pesanan yang sudah diambil tidak bisa diubah
+if ($pesanan['status_pesanan'] === 'diambil') {
+    header("Location: dashboard.php?error=Pesanan sudah diambil dan tidak dapat diubah lagi.");
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -97,30 +103,54 @@ $details = $stmtDetail->fetchAll();
                 <h2>Ubah Status Pesanan</h2>
                 <p>Status Saat Ini: <span class="badge badge-info"><?= ucfirst($pesanan['status_pesanan']) ?></span></p>
 
+                <!-- SATU FORM UNTUK SEMUA AKSI -->
                 <form action="proses-update.php" method="POST">
                     <input type="hidden" name="id_pesanan" value="<?= $pesanan['id_pesanan'] ?>">
                     <input type="hidden" name="status_lama" value="<?= $pesanan['status_pesanan'] ?>">
 
                     <div class="form-group" style="margin-top:16px;">
                         <label>Pilih Status Baru</label>
-                        <select name="status_baru" required>
+                        <select name="status_baru" id="status_baru" required>
                             <?php if ($pesanan['status_pesanan'] === 'menunggu'): ?>
                                 <option value="diproses">Diproses</option>
                             <?php elseif ($pesanan['status_pesanan'] === 'diproses'): ?>
                                 <option value="selesai">Selesai</option>
                             <?php elseif ($pesanan['status_pesanan'] === 'selesai'): ?>
                                 <option value="diambil">Diambil</option>
+                            <?php elseif ($pesanan['status_pesanan'] === 'tertunda'): ?>
+                                <option value="diproses">Lanjutkan ke Diproses</option>
                             <?php endif; ?>
                         </select>
                     </div>
 
+                    <!-- Tampilkan checkbox pembayaran jika status akan diambil -->
+                    <?php if ($pesanan['status_pesanan'] === 'selesai'): ?>
+                        <div class="form-group" style="background:var(--primary-light); padding:12px; border-radius:8px; margin-bottom:12px;">
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:0;">
+                                <input type="checkbox" name="sudah_dibayar" value="1" style="width:auto;">
+                                <span>Pembayaran tunai sudah diterima (Rp <?= number_format($pesanan['total_biaya'], 0, ',', '.') ?>)</span>
+                            </label>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="form-group">
                         <label>Catatan (opsional)</label>
-                        <textarea name="keterangan" rows="3" placeholder="Contoh: Tinta habis, menunggu isi ulang..."></textarea>
+                        <textarea name="keterangan" id="keterangan" rows="3" placeholder="Contoh: Tinta habis, menunggu isi ulang..."></textarea>
                     </div>
 
-                    <div style="display:flex; gap:8px;">
+                    <!-- TOMBOL AKSI -->
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <!-- Tombol Utama: Simpan Perubahan Biasa -->
                         <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+
+                        <!-- Tombol Tandai Tertunda (Hanya muncul jika status bukan tertunda) -->
+                        <?php if ($pesanan['status_pesanan'] !== 'tertunda'): ?>
+                            <button type="submit" name="aksi" value="tertunda" class="btn btn-secondary"
+                                onclick="document.getElementById('status_baru').removeAttribute('required'); document.getElementById('status_baru').innerHTML = '<option value=\'tertunda\'>Tertunda</option>'; document.getElementById('keterangan').value = 'Stok kertas/tinta habis'; return confirm('Tandai pesanan sebagai Tertunda karena stok habis?');">
+                                ⚠️ Tandai Tertunda (Stok Habis)
+                            </button>
+                        <?php endif; ?>
+
                         <a href="dashboard.php" class="btn btn-secondary">Batal</a>
                     </div>
                 </form>
