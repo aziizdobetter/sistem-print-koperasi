@@ -4,6 +4,24 @@ require_once '../../auth/check_auth.php';
 require_once '../../config/database.php';
 require_role('petugas');
 
+// --- QUERY STATISTIK HARI INI ---
+$today = date('Y-m-d');
+
+// 1. Total pesanan hari ini
+$stmtTotal = $pdo->prepare("SELECT COUNT(*) FROM pesanan WHERE DATE(tanggal_pesan) = :today");
+$stmtTotal->execute([':today' => $today]);
+$total_pesanan = $stmtTotal->fetchColumn();
+
+// 2. Pesanan yang sedang diproses/menunggu/tertunda
+$stmtProses = $pdo->prepare("SELECT COUNT(*) FROM pesanan WHERE status_pesanan IN ('menunggu', 'diproses', 'tertunda')");
+$stmtProses->execute();
+$pesanan_proses = $stmtProses->fetchColumn();
+
+// 3. Pendapatan hari ini (Hanya yang sudah dibayar)
+$stmtPendapatan = $pdo->prepare("SELECT SUM(total_biaya) FROM pesanan WHERE DATE(tanggal_pesan) = :today AND status_pembayaran = 'sudah_dibayar'");
+$stmtPendapatan->execute([':today' => $today]);
+$pendapatan_hari_ini = $stmtPendapatan->fetchColumn() ?: 0;
+
 // Tangkap parameter pencarian dan filter dari URL
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $filter_status = isset($_GET['status']) ? $_GET['status'] : '';
@@ -61,9 +79,6 @@ $pesanan = $stmt->fetchAll();
 
     <div class="container">
         <div class="card">
-            <div class="card-header">
-                <h2>📋 Daftar Pesanan Masuk (FIFO)</h2>
-            </div>
 
             <?php if (isset($_GET['msg'])): ?>
                 <div style="background:#d4edda; color:#28a745; padding:10px; border-radius:8px; margin-bottom:16px; font-size:13px;">
@@ -98,6 +113,22 @@ $pesanan = $stmt->fetchAll();
                     <button type="submit" class="btn btn-primary">🔍 Cari / Filter</button>
                     <a href="dashboard.php" class="btn btn-secondary">Reset</a>
                 </form>
+            </div>
+
+            <!-- KARTU STATISTIK HARI INI -->
+            <div class="grid-3" style="margin-bottom: 16px;">
+                <div class="stat-box">
+                    <div class="stat-value"><?= $total_pesanan ?></div>
+                    <div class="stat-label">Total Pesanan Hari Ini</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" style="color: var(--warning);"><?= $pesanan_proses ?></div>
+                    <div class="stat-label">Sedang Diproses / Antri</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" style="color: var(--success);">Rp <?= number_format($pendapatan_hari_ini, 0, ',', '.') ?></div>
+                    <div class="stat-label">Pendapatan Hari Ini (Lunas)</div>
+                </div>
             </div>
 
             <table>
