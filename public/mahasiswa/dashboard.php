@@ -6,7 +6,7 @@ require_role('mahasiswa');
 
 // Ambil ringkasan pesanan aktif milik mahasiswa ini
 $id_user = $_SESSION['user_id'];
-$stmt = $pdo->prepare("SELECT * FROM pesanan WHERE id_pengguna = :id ORDER BY id_pesanan DESC LIMIT 3");
+$stmt = $pdo->prepare("SELECT * FROM pesanan WHERE id_pengguna = :id ORDER BY id_pesanan DESC");
 $stmt->execute([':id' => $id_user]);
 $pesanan_aktif = $stmt->fetchAll();
 ?>
