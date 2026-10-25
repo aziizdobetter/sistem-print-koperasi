@@ -6,7 +6,7 @@ require_role('mahasiswa');
 
 // Ambil ringkasan pesanan aktif milik mahasiswa ini
 $id_user = $_SESSION['user_id'];
-$stmt = $pdo->prepare("SELECT * FROM pesanan WHERE id_pengguna = :id ORDER BY id_pesanan DESC");
+$stmt = $pdo->prepare("SELECT * FROM pesanan WHERE id_pengguna = :id ORDER BY id_pesanan DESC LIMIT 3");
 $stmt->execute([':id' => $id_user]);
 $pesanan_aktif = $stmt->fetchAll();
 ?>
@@ -17,6 +17,41 @@ $pesanan_aktif = $stmt->fetchAll();
     <meta charset="UTF-8">
     <title>Dashboard Mahasiswa — PrintKoperasi</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>assets/css/style.css">
+    <style>
+        /* CSS Tambahan untuk Menu Navigasi */
+        .nav-menu {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            background: var(--white);
+            padding: 8px;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .nav-menu a {
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--gray);
+            text-decoration: none;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .nav-menu a:hover {
+            background: var(--gray-light);
+            color: var(--primary);
+        }
+
+        .nav-menu a.active {
+            background: var(--primary);
+            color: var(--white);
+        }
+    </style>
 </head>
 
 <body>
@@ -29,6 +64,14 @@ $pesanan_aktif = $stmt->fetchAll();
     </header>
 
     <div class="container">
+
+        <!-- MENU NAVIGASI MAHASISWA -->
+        <div class="nav-menu">
+            <a href="dashboard.php" class="active">🏠 Dashboard</a>
+            <a href="pesan-cetak.php">📋 Pesan Cetak</a>
+            <a href="riwayat.php">📜 Riwayat Transaksi</a>
+        </div>
+
         <!-- CTA Pesan Cetak -->
         <div class="cta-card">
             <div>
@@ -40,7 +83,9 @@ $pesanan_aktif = $stmt->fetchAll();
 
         <!-- Ringkasan Pesanan Aktif -->
         <div class="card">
-            <h2>📊 Status Pesanan Aktif</h2>
+            <div class="card-header">
+                <h2>📊 Status Pesanan Aktif</h2>
+            </div>
             <table>
                 <thead>
                     <tr>
@@ -61,6 +106,7 @@ $pesanan_aktif = $stmt->fetchAll();
                                 $badge = 'badge-info';
                                 if ($row['status_pesanan'] == 'diproses') $badge = 'badge-warning';
                                 if ($row['status_pesanan'] == 'selesai') $badge = 'badge-success';
+                                if ($row['status_pesanan'] == 'tertunda') $badge = 'badge-danger';
                                 ?>
                                 <span class="badge <?= $badge ?>"><?= ucfirst($row['status_pesanan']) ?></span>
                             </td>
